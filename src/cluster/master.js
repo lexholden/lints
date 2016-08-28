@@ -28,7 +28,7 @@ module.exports = function startClusterMaster() {
             const workChunk = chunksOfFilesWithLinters.shift();
 
             if (workChunk === undefined) {
-                return worker.disconnect();
+                return worker && worker.disconnect();
             }
 
             worker.send(workChunk);
