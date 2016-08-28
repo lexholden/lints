@@ -2,65 +2,37 @@
 
 "use strict";
 
-const fs = require("fs");
-const glob = require("glob");
 const Bluebird = require("bluebird");
 
-const globAsync = Bluebird.promisify(glob);
-
-function logError(err) {
-    process.exitCode = 1;
-    console.error(err);
-}
-
-function parseGlobsAndLintFiles(settings) {
-    function lintFiles(options) {
-        function readAndLintFile(file) {
-            function logWarnings(warnings) {
-                if (warnings.length > 0) {
-                    console.log();
-                    console.log(`${file} (${settings.linterName})`);
-                    process.exitCode = 1;
-                }
-                warnings.forEach(settings.logWarning || console.log);
-            }
-
-            function lintFile(data) {
-                return settings.lintAndLogWarnings({
-                    file,
-                    data,
-                    options,
-                    logWarnings
-                });
-            }
-
-            return fs
-                .readFileAsync(file, "utf8")
-                .then(lintFile)
-                .catch(logError);
-        }
-
-        function parseGlob(globPattern) {
-            return globAsync(globPattern, {ignore: settings.ignore});
-        }
-
-        const globs = settings.files || [];
-
-        console.log(`Running ${settings.linterName}...`);
-
-        return Bluebird
-            .map(globs, parseGlob)
-            .reduce((allFiles, files) => allFiles.concat(files), [])
-            .each(readAndLintFile)
-            .catch(logError);
+module.exports = function lint(settings) {
+    function logFileNameAndLinterName() {
+        console.log();
+        console.log(`${settings.fileName} (${settings.linterName})`);
+        process.exitCode = 1;
     }
 
-    return fs
-        .readFileAsync(settings.rcFile, "utf8")
-        .then(JSON.parse)
-        .then(lintFiles, () => lintFiles());
-}
+    function logError(err) {
+        logFileNameAndLinterName();
+        console.error(err);
+    }
 
-Bluebird.promisifyAll(fs);
+    function logWarnings(warnings) {
+        if (warnings.length > 0) {
+            logFileNameAndLinterName();
+            warnings.forEach(settings.logWarning || console.log);
+        }
+    }
 
-module.exports = parseGlobsAndLintFiles;
+    function tryLintAndLogWarnings() {
+        return settings.lintAndLogWarnings({
+            file: settings.fileName,
+            data: settings.data,
+            options: settings.options,
+            logWarnings
+        });
+    }
+
+    Bluebird
+        .try(tryLintAndLogWarnings)
+        .catch(logError);
+};

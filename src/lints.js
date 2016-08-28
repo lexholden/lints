@@ -3,23 +3,43 @@
 
 "use strict";
 
-const fs = require("fs");
-const Bluebird = require("bluebird");
+const lodash = require("lodash/fp");
 
-function requireAndRunLinters(config) {
-    function requireAndRunLinter(linterName) {
-        const linter = require(`./linters/${linterName}.js`);
+const promisedLintsConfig = require("./promise-lints-config");
+const getLinterConfigs = require("./get-linter-configs");
+const prepareWork = require("./prepare-work");
+const makeWorker = require("./make-worker");
 
-        linter(config[linterName]);
-    }
+const linters = {};
+const linterConfigs = {};
 
-    Object.keys(config).forEach(requireAndRunLinter);
+function loadLinter(linterName) {
+    console.log(`Loading ${linterName}...`);
+    linters[linterName] = require(`./linters/${linterName}.js`);
 }
 
-Bluebird.promisifyAll(fs);
+function loadLinters(lintsConfig) {
+    const linterNames = Object.keys(lintsConfig);
 
-fs
-    .readFileAsync(`${process.cwd()}/.lints.json`, "utf8")
-    .then(JSON.parse)
-    .catch(() => require("./default.lints.json"))
-    .then(requireAndRunLinters);
+    linterNames.forEach(loadLinter);
+
+    return getLinterConfigs(lintsConfig)
+        .then(
+            lodash.mapValues((config) => config || undefined)
+        )
+        .then((loadedLinterConfigs) => Object.assign(
+            linterConfigs,
+            loadedLinterConfigs
+        ))
+        .then(() => lintsConfig);
+}
+
+promisedLintsConfig
+    .then(loadLinters)
+    .then(prepareWork)
+    .then(
+        makeWorker({
+            linters,
+            linterConfigs
+        })
+    );
