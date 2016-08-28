@@ -24,11 +24,12 @@
     "html"
   ],
   "scripts": {
-    "pretest": "./bin/lints",
+    "pretest": "./bin/lints && ./bin/lints-cluster",
     "test": "mocha"
   },
   "bin": {
-    "lints": "./bin/lints"
+    "lints": "./bin/lints",
+    "lints-cluster": "./bin/lints-cluster"
   },
   "repository": {
     "type": "git",
