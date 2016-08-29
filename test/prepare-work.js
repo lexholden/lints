@@ -19,54 +19,56 @@ describe("prepareWork()", function () {
     it(
         "should transform a lints config into a map of files and their linters",
         function () {
-            expect(
-                prepareWork({
-                    "dummy-linter": {
-                        "files": [
-                            "test/**/*.dummy-extension"
-                        ],
-                        "ignore": [
-                            "node_modules/**",
-                            "**/*.min.dummy-extension"
-                        ],
-                        "rcFile": ".jslintrc"
-                    }
-                })
-            ).to.eventually.eql({
-                "test/dummy-file.dummy-extension": ["dummy-linter"],
-                "test/dummy-folder/dummy-file.dummy-extension": ["dummy-linter"]
-            });
+            return Promise.all([
+                expect(
+                    prepareWork({
+                        "dummy-linter": {
+                            "files": [
+                                "test/**/*.extension"
+                            ],
+                            "ignore": [
+                                "node_modules/**",
+                                "**/*.min.extension"
+                            ],
+                            "rcFile": ".jslintrc"
+                        }
+                    })
+                ).to.eventually.eql({
+                    "test/dummies/file.extension": ["dummy-linter"],
+                    "test/dummies/dir/file.extension": ["dummy-linter"]
+                }),
 
-            expect(
-                prepareWork({
-                    "jslint": {
-                        "files": [
-                            "test/**/*.dummy-extension"
-                        ],
-                        "ignore": [
-                            "node_modules/**",
-                            "**/*.min.js"
-                        ],
-                        "rcFile": ".jslintrc"
-                    },
-                    "jshint": {
-                        "files": [],
-                        "ignore": [],
-                        "rcFile": null
-                    },
-                    "csslint": {},
-                    "w3cjs": {
-                        "files": [
-                            "test/dummy-file.dummy-extension"
-                        ],
-                        "rcFile": null
-                    }
+                expect(
+                    prepareWork({
+                        "jslint": {
+                            "files": [
+                                "test/**/*.extension"
+                            ],
+                            "ignore": [
+                                "node_modules/**",
+                                "**/*.min.js"
+                            ],
+                            "rcFile": ".jslintrc"
+                        },
+                        "jshint": {
+                            "files": [],
+                            "ignore": [],
+                            "rcFile": null
+                        },
+                        "csslint": {},
+                        "w3cjs": {
+                            "files": [
+                                "test/dummies/file.extension"
+                            ],
+                            "rcFile": null
+                        }
+                    })
+                ).to.eventually.eql({
+                    "test/dummies/file.extension": ["jslint", "w3cjs"],
+                    "test/dummies/dir.extension/file.min.extension": ["jslint"],
+                    "test/dummies/dir/file.extension": ["jslint"]
                 })
-            ).to.eventually.eql({
-                "test/dummy-file.dummy-extension": ["jslint", "w3cjs"],
-                "test/dummy-folder/dummy-file.min.dummy-extension": ["jslint"],
-                "test/dummy-folder/dummy-file.dummy-extension": ["jslint"]
-            });
+            ]);
         }
     );
 });

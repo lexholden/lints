@@ -17,7 +17,10 @@ module.exports = function prepareWork(lintsConfig) {
         linterFiles[linterName] = Bluebird
             .map(
                 globs,
-                (globPattern) => globAsync(globPattern, {ignore: ignoreGlob})
+                (globPattern) => globAsync(globPattern, {
+                    ignore: ignoreGlob,
+                    nodir: true
+                })
             )
             .then(lodash.flattenDeep);
 
